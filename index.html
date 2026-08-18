@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INSTA Pucón">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#111111">
+<title>INSTA Pucón · Ventas</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f5f5;color:#111}
+.wrap{max-width:520px;margin:auto;padding:18px 16px 40px}
+h1{font-size:28px;margin:4px 0 2px}.sub{color:#666;margin-bottom:18px}
+.card{background:white;border-radius:20px;padding:18px;margin:12px 0;box-shadow:0 2px 10px #0000000d}
+.big{font-size:48px;font-weight:800;line-height:1}.money{font-size:30px;font-weight:750;margin-top:6px}
+.label{font-size:13px;color:#777;text-transform:uppercase;letter-spacing:.06em}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{border:0;border-radius:16px;padding:17px 10px;font-size:17px;font-weight:700;background:#111;color:white;touch-action:manipulation}
+button.secondary{background:#eee;color:#111}button.danger{background:#eee;color:#b00020}
+button:active{transform:scale(.98)}
+.meta{display:flex;justify-content:space-between;gap:12px;margin-top:14px;color:#555;font-size:14px}
+.bar{height:10px;background:#eee;border-radius:20px;overflow:hidden;margin-top:8px}.fill{height:100%;background:#111;width:0%}
+.row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eee}.row:last-child{border:0}
+small{color:#777}.hint{font-size:13px;color:#777;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>INSTA Pucón 📸</h1>
+  <div class="sub" id="date"></div>
+
+  <div class="card">
+    <div class="label">Fotos vendidas hoy</div>
+    <div class="big" id="photos">0</div>
+    <div class="money" id="total">$0</div>
+    <div class="meta"><span>Meta: <b id="goal">50</b> fotos</span><span id="remaining">Faltan 50</span></div>
+    <div class="bar"><div class="fill" id="fill"></div></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Registrar venta</div>
+    <div class="grid" style="margin-top:12px">
+      <button onclick="sale(1,4000)">+ 1 foto<br><small style="color:#ccc">$4.000</small></button>
+      <button onclick="sale(2,8000)">+ 2 fotos<br><small style="color:#ccc">$8.000</small></button>
+      <button onclick="sale(3,12000)">+ 3 fotos<br><small style="color:#ccc">$12.000</small></button>
+      <button onclick="customSale()">Otro monto</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Medio de pago</div>
+    <div class="grid" style="margin-top:12px">
+      <button class="secondary" onclick="pay('Efectivo')">💵 Efectivo</button>
+      <button class="secondary" onclick="pay('Transferencia')">📲 Transferencia</button>
+      <button class="secondary" onclick="pay('Tarjeta')">💳 Tarjeta</button>
+      <button class="secondary" onclick="pay('Otro')">Otro</button>
+    </div>
+    <div id="last" class="hint" style="margin-top:12px">Las ventas se guardan en este teléfono.</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Resumen por pago</div>
+    <div class="row"><span>💵 Efectivo</span><b id="cash">$0</b></div>
+    <div class="row"><span>📲 Transferencia</span><b id="transfer">$0</b></div>
+    <div class="row"><span>💳 Tarjeta</span><b id="card">$0</b></div>
+    <div class="row"><span>Otro</span><b id="other">$0</b></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Acciones</div>
+    <div class="grid" style="margin-top:12px">
+      <button class="secondary" onclick="undo()">↩️ Deshacer</button>
+      <button class="danger" onclick="resetDay()">Reiniciar día</button>
+    </div>
+    <p class="hint">Consejo: cuando vendas, primero toca el número de fotos y después el medio de pago. Si cobras siempre $4.000 por foto, la cuenta queda automática.</p>
+  </div>
+</div>
+
+<script>
+const KEY='instaPuconVentas';
+let state=JSON.parse(localStorage.getItem(KEY)||'null')||{photos:0,total:0,pay:{Efectivo:0,Transferencia:0,Tarjeta:0,Otro:0},history:[],goal:50};
+let pending=null;
+const money=n=>new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(n);
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
+function sale(photos,amount){
+  state.photos+=photos; state.total+=amount;
+  state.history.push({photos,amount,payment:null});
+  pending=state.history.length-1;
+  document.getElementById('last').textContent='Venta registrada. Ahora elige el medio de pago.';
+  save();
+}
+function pay(method){
+  if(pending===null){document.getElementById('last').textContent='Primero registra una venta.';return}
+  let h=state.history[pending];
+  if(h.payment){state.pay[h.payment]-=h.amount}
+  h.payment=method; state.pay[method]+=h.amount; pending=null;
+  document.getElementById('last').textContent='Pago registrado: '+method+'.';
+  save();
+}
+function customSale(){
+  let p=prompt('¿Cuántas fotos vendiste?','1'); if(p===null)return;
+  let a=prompt('¿Monto total cobrado?','4000'); if(a===null)return;
+  p=parseInt(p); a=parseInt(a);
+  if(!Number.isFinite(p)||!Number.isFinite(a)||p<1||a<0)return alert('Ingresa números válidos.');
+  sale(p,a);
+}
+function undo(){
+  if(!state.history.length)return;
+  let h=state.history.pop(); state.photos-=h.photos; state.total-=h.amount;
+  if(h.payment)state.pay[h.payment]-=h.amount;
+  pending=null; save();
+}
+function resetDay(){
+  if(confirm('¿Reiniciar todas las ventas de hoy?')){state={photos:0,total:0,pay:{Efectivo:0,Transferencia:0,Tarjeta:0,Otro:0},history:[],goal:50};pending=null;save();}
+}
+function render(){
+  document.getElementById('photos').textContent=state.photos;
+  document.getElementById('total').textContent=money(state.total);
+  document.getElementById('goal').textContent=state.goal;
+  document.getElementById('remaining').textContent=state.photos>=state.goal?'¡Meta cumplida!':'Faltan '+(state.goal-state.photos);
+  document.getElementById('fill').style.width=Math.min(100,state.photos/state.goal*100)+'%';
+  document.getElementById('cash').textContent=money(state.pay.Efectivo);
+  document.getElementById('transfer').textContent=money(state.pay.Transferencia);
+  document.getElementById('card').textContent=money(state.pay.Tarjeta);
+  document.getElementById('other').textContent=money(state.pay.Otro);
+  document.getElementById('date').textContent=new Date().toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+render();
+</script>
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");</script>
+</body>
+</html>

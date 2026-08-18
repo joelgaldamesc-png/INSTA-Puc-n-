@@ -1,0 +1,13 @@
+{
+  "name": "INSTA Pucón · Ventas",
+  "short_name": "INSTA Pucón",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#111111",
+  "description": "Contador y registro diario de ventas de INSTA Pucón.",
+  "icons": [
+    {"src":"icon-180.png","sizes":"180x180","type":"image/png","purpose":"any maskable"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
